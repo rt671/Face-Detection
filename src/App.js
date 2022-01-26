@@ -1,4 +1,4 @@
-import React, {Component} from 'react';
+import React, { Component } from 'react';
 import './App.css';
 import Navigation from './Components/Navigation/Navigation';
 import Logo from './Components/Logo/Logo';
@@ -6,12 +6,16 @@ import LinkInput from './Components/LinkInput/LinkInput';
 import Particles from "react-tsparticles";
 import Clarifai from 'clarifai';
 import Image from './Components/Image/Image';
+import SignIn from './Components/SignIn/SignIn';
+import logo from "./Components/Logo/logo.png"
+import Register from './Components/Register/Register';
 
-const app  =new Clarifai.App({
-  apiKey:'0165cc8b155f46039cf51f253b1dc35e'
+
+const app = new Clarifai.App({
+  apiKey: '0165cc8b155f46039cf51f253b1dc35e'
 });
 
-const options={
+const options = {
   fpsLimit: 60,
   interactivity: {
     events: {
@@ -84,66 +88,105 @@ const options={
   detectRetina: true,
 }
 
-class App extends Component{
-  constructor()
-  {
+class App extends Component {
+  constructor() {
     super();
-    this.state={
-      input:'',
-      imageUrl:'',
-      box:{}
+    this.state = {
+      input: '',
+      imageUrl: '',
+      boxArray: [],
+      route: 'signin'
     }
   }
 
+  // calculateLocation = (res) => {
+  //   const info = res.outputs[0].data.regions[0].region_info.bounding_box;
+  //   console.log(info);
+  //   const image = document.getElementById("inputImage");
+  //   const width = Number(image.width);
+  //   const height = Number(image.height);
+  //   return(
+  //     {
+  //     topRow:info.top_row * height,
+  //     bottomRow:height - (info.bottom_row * height),
+  //     leftCol:info.left_col*width,
+  //     rightCol: width - (info.right_col * width)
+  //     }
+  //   );
+  // }
+
   calculateLocation = (res) => {
-    const info = res.outputs[0].data.regions[0].region_info.bounding_box;
-    console.log(info);
+    const infoArray = res.outputs[0].data.regions.map(item => item.region_info.bounding_box);
+    console.log("Info array is ", infoArray);
     const image = document.getElementById("inputImage");
     const width = Number(image.width);
     const height = Number(image.height);
-    return(
-      {
-      topRow:info.top_row * height,
-      bottomRow:height - (info.bottom_row * height),
-      leftCol:info.left_col*width,
-      rightCol: width - (info.right_col * width)
-      }
-    );
+    const ValueArray = infoArray.map(info => {
+      return (
+        {
+          topRow: info.top_row * height,
+          bottomRow: height - (info.bottom_row * height),
+          leftCol: info.left_col * width,
+          rightCol: width - (info.right_col * width)
+        }
+      );
+    });
+    console.log("Value Array is ", ValueArray);
+    return ValueArray;
+
   }
 
-  displayFace = (box) =>
-  {
-    this.setState({box:box});
+  displayFace = (boxArray) => {
+    console.log("Box Array is done");
+    this.setState({ boxArray: boxArray }, console.log(boxArray));
   }
 
   onInputChange = (event) => {
-    console.log(event.target.value);
-    this.setState({input:event.target.value});
+    console.log("Input Changed");
+    //console.log(event.target.value);
+    this.setState({ input: event.target.value });
   }
 
-  onButtonClick = (event) =>{
-    this.setState({imageUrl:this.state.input});
-    console.log(event.target.value);
+  onButtonClick = (event) => {
+    console.log("Button Clicked");
+    this.setState({ imageUrl: this.state.input });
+    //console.log(event.target.value);
     app.models.predict(Clarifai.FACE_DETECT_MODEL, this.state.input)
-    .then(response => this.displayFace(this.calculateLocation(response)))
-    .catch((err) => {
-      console.log(err);
-     });
+      .then(response => { this.displayFace(this.calculateLocation(response)) })
+      .catch((err) => {
+        console.log(err);
+      });
   }
 
-  render(){
+  onRouteChange = (route) => {
+    this.setState({ route: route });
+  }
+
+  render() {
+    console.log("Rendering");
+    console.log("BA", this.state.boxArray);
     return (
       <>
-        <Particles options={options} className='particles'></Particles>
         <div className="App">
-            <div className="header">
-              <Logo />
-              <Navigation />
-            </div>
-            <LinkInput onInputChange={this.onInputChange} onButtonClick={this.onButtonClick}/>
-            <Image imageUrl={this.state.imageUrl} box={this.state.box}/>
-          </div>
+          <Particles options={options} className='particles'></Particles>
+
+          {
+            (this.state.route === 'signin') ?
+              <><img id="sidelogo" src={logo} alt="logo" /><SignIn onRouteChange={this.onRouteChange} /></> :
+              (
+                (this.state.route === 'register') ?
+                  <><img id="sidelogo" src={logo} alt="logo" /><Register onRouteChange={this.onRouteChange} /></> :
+                  <>
+                    <div className="header">
+                      <Logo />
+                      <Navigation onSignOut={this.onRouteChange} />
+                    </div>
+                    <LinkInput onInputChange={this.onInputChange} onButtonClick={this.onButtonClick} /><Image imageUrl={this.state.imageUrl} boxArray={this.state.boxArray} /></>
+              )
+          }
+        </div>
       </>
+
     );
   }
 }

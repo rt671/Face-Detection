@@ -1,10 +1,10 @@
 import React from "react";
 
-const Navigation = () => {
-     
+const Navigation = ({onSignOut}) => {
+    //  console.log("Route is ", display);
     return(
-        <nav style={{display:"inline-block"}}>
-            <button className="pa2 ma5">Sign Out</button>
+        <nav>
+            <button onClick={() => onSignOut('signin')} className="pa2 ma5">Sign Out</button>
         </nav>
     );
 

@@ -20,3 +20,11 @@
   display: flex;
   justify-content: center;
 }
+
+#sidelogo{
+  width:100px;
+  height:100px;
+  position:fixed;
+  top:3rem;
+  left:3rem;
+}
