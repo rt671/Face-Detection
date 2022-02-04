@@ -54,9 +54,10 @@ app.use(cors());
 //     res.json(database.users);
 // })
 
+app.get('/', (req, res) => res.json('The app is working!'));
 app.post('/signin', (req, res) => signin.handleSignIn(req, res, db, bcrypt));
 app.post('/register', (req, res) => register.handleRegister(req, res, db, bcrypt));
 app.get('/profile/:id', (req, res) => profile.handleProfile(req, res, db));
 app.put('/image',(req, res) => image.handleImage(req,res,db));
 app.post('/imageUrl', (req, res) => image.handleImageApi(req, res));
-app.listen(2000, () => {console.log("The server is running!")});
+app.listen(process.env.PORT || 2000, () => {console.log(`The server is running! at port ${process.env.PORT}`)});
