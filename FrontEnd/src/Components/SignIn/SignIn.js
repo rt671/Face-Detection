@@ -34,10 +34,10 @@ class SignIn extends Component {
         .then(user => {
             if(user.id)
             {
-                this.props.onLoadUser(user);
+                this.props.loadUser(user);
                 this.props.onRouteChange('home');
             }
-            else    
+            else   
                 alert("Wrong email or password!");
         })
         

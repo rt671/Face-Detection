@@ -4,16 +4,13 @@ import Navigation from './Components/Navigation/Navigation';
 import Logo from './Components/Logo/Logo';
 import LinkInput from './Components/LinkInput/LinkInput';
 import Particles from "react-tsparticles";
-import Clarifai from 'clarifai';
 import Image from './Components/Image/Image';
 import SignIn from './Components/SignIn/SignIn';
 import logo from "./Components/Logo/logo.png"
 import Register from './Components/Register/Register';
 import Rank from './Components/Rank/Rank';
 
-const app = new Clarifai.App({
-  apiKey: '0165cc8b155f46039cf51f253b1dc35e'
-});
+
 
 const options = {
   fpsLimit: 60,
@@ -88,23 +85,25 @@ const options = {
   detectRetina: true,
 }
 
+const initialState={
+  input: '',
+  imageUrl: '',
+  boxArray: [],
+  route: 'signin',
+  user: {
+    id: '',
+    name: '',
+    email: '',
+    password: '',
+    entries: 0,
+    joined: ''
+  }
+}
+
 class App extends Component {
   constructor() {
     super();
-    this.state = {
-      input: '',
-      imageUrl: '',
-      boxArray: [],
-      route: 'signin',
-      user:{
-        id:'',
-        name: '',
-        email:'',
-        password:'',
-        entries:0,
-        joined: ''
-      }
-    }
+    this.state = initialState;
   }
 
   // calculateLocation = (res) => {
@@ -166,39 +165,46 @@ class App extends Component {
     console.log("Button Clicked");
     this.setState({ imageUrl: this.state.input });
     //console.log(event.target.value);
-    app.models.predict(Clarifai.FACE_DETECT_MODEL, this.state.input)
-      .then(response => { 
-        if(response)
+    fetch('http://localhost:2000/imageUrl', {
+      method: 'post',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(
           {
-            fetch('http://localhost:2000/image', {
-              method:'put',
-              headers: {'Content-Type': 'application/json'},
-              body: JSON.stringify(
-                  {
-                      id: this.state.user.id    
-                  }
-              )
-              }).then(res => res.json())
-              .then(count => this.setState(Object.assign(this.state.user, {entries: count})))
-          }
-        this.displayFace(this.calculateLocation(response)) })
-      .catch((err) => {
-        console.log(err);
-      });
+            url:this.state.input
+          })
+      }).then(res => res.json())
+      .then(response =>
+      {
+        if(response){
+        fetch('http://localhost:2000/image', {
+          method: 'put',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(
+              {
+                id: this.state.user.id,
+              })
+          }).then(res => res.json())
+            .then(count => this.setState(Object.assign(this.state.user, { entries: count })))
+            .catch(err => response.status(400).json("Problem in updating entries"));
+      
+            this.displayFace(this.calculateLocation(response));
+         }
+        })
   }
 
   onRouteChange = (route) => {
     this.setState({ route: route });
+    if(route==='signin') this.setState(initialState);
   }
 
-  onLoadUser = (data) => {
+  loadUser = (data) => {
     this.setState({
-      user:{
-        id:data.id,
+      user: {
+        id: data.id,
         name: data.name,
-        email:data.email,
-        password:data.password,
-        entries:data.entries,
+        email: data.email,
+        password: data.password,
+        entries: data.entries,
         joined: data.joined
       }
     })
@@ -214,16 +220,20 @@ class App extends Component {
 
           {
             (this.state.route === 'signin') ?
-              <><img id="sidelogo" src={logo} alt="logo" /><SignIn onLoadUser={this.onLoadUser} onRouteChange={this.onRouteChange} /></> :
+              <><img id="sidelogo" src={logo} alt="logo" /><SignIn loadUser={this.loadUser} onRouteChange={this.onRouteChange} /></> :
               (
                 (this.state.route === 'register') ?
-                  <><img id="sidelogo" src={logo} alt="logo" /><Register onLoadUser={this.onLoadUser} onRouteChange={this.onRouteChange} /></> :
+                  <><div className="header">
+                  <Logo />
+                  <Navigation display='Sign In' onSignOut={this.onRouteChange} />
+                </div>
+                <Register loadUser={this.loadUser} onRouteChange={this.onRouteChange} /></> :
                   <>
                     <div className="header">
                       <Logo />
-                      <Navigation onSignOut={this.onRouteChange} />
+                      <Navigation display='Sign Out' onSignOut={this.onRouteChange} />
                     </div>
-                    <Rank name={this.state.user.name} entries={this.state.user.entries}/>
+                    <Rank name={this.state.user.name} entries={this.state.user.entries} />
                     <LinkInput onInputChange={this.onInputChange} onButtonClick={this.onButtonClick} /><Image imageUrl={this.state.imageUrl} boxArray={this.state.boxArray} /></>
               )
           }
